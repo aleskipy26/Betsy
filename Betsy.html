@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nuestro Árbol del Amor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            overflow: hidden;
+            background: radial-gradient(circle at center, #ffebee 0%, #f48fb1 100%);
+            font-family: 'Montserrat', sans-serif;
+            width: 100%;
+            height: 100%;
+            position: fixed; 
+            top: 0;
+            left: 0;
+        }
+        
+        /* Pantalla de inicio para desbloquear el WebView de iOS */
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #ffebee 0%, #f48fb1 100%);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1s ease-in-out;
+        }
+
+        /* Pantalla de advertencia para WhatsApp/WebViews */
+        #webview-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #ffebee 0%, #f48fb1 100%);
+            z-index: 60;
+            display: none; /* Oculto por defecto */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            text-align: center;
+        }
+
+        #webview-warning h2 {
+            font-family: 'Dancing Script', cursive;
+            color: #ad1457;
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+        }
+
+        #webview-warning p {
+            color: #880e4f;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            max-width: 400px;
+            background: rgba(255,255,255,0.6);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(216,27,96,0.1);
+        }
+
+        #start-screen h2 {
+            font-family: 'Dancing Script', cursive;
+            color: #ad1457;
+            font-size: 3.5rem;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+        }
+
+        #start-btn {
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            background-color: #d81b60;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(216,27,96,0.4);
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            animation: pulseBtn 2s infinite;
+        }
+
+        @keyframes pulseBtn {
+            0% { transform: scale(1); box-shadow: 0 4px 15px rgba(216,27,96,0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(216,27,96,0.6); }
+            100% { transform: scale(1); box-shadow: 0 4px 15px rgba(216,27,96,0.4); }
+        }
+
+        #canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            background-color: transparent; /* Permite ver el fondo CSS sin sobrecargar el Canvas */
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        .ui-layer.visible {
+            opacity: 1 !important;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(216, 27, 96, 0.15);
+            border-radius: 16px;
+            padding: 20px;
+            pointer-events: auto;
+        }
+
+        .poem-panel {
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .poem-title {
+            font-family: 'Dancing Script', cursive;
+            color: #ad1457;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .poem-text {
+            color: #4a148c;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            text-align: justify;
+        }
+
+        .poem-line {
+            opacity: 0;
+            margin-bottom: 15px;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        .poem-line.visible {
+            opacity: 1 !important;
+        }
+
+        .timer-panel {
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .timer-subtitle {
+            font-size: 0.8rem;
+            color: #9d174d;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .timer-numbers {
+            font-variant-numeric: tabular-nums;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: 700;
+            color: #c2185b;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .timer-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .timer-value {
+            font-size: 2.2rem;
+            line-height: 1;
+        }
+
+        .timer-label {
+            font-size: 0.75rem;
+            color: #be185d;
+            font-family: 'Montserrat', sans-serif;
+            margin-top: 5px;
+        }
+
+        .timer-colon {
+            font-size: 2.2rem;
+            padding-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .poem-panel { max-height: 45vh; overflow-y: auto; }
+            #start-screen h2 { font-size: 2.8rem; }
+            #webview-warning h2 { font-size: 2.5rem; }
+        }
+
+        @media (min-width: 768px) {
+            .poem-title { font-size: 3rem; text-align: left; }
+            .poem-text { font-size: 1.1rem; }
+            .timer-value { font-size: 3rem; }
+            .timer-colon { font-size: 3rem; }
+            .timer-subtitle { font-size: 1rem; }
+            .ui-layer { padding: 40px; }
+            .poem-panel { margin-top: 0; }
+            .timer-panel { margin-bottom: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Pantalla de advertencia para forzar salir de WhatsApp -->
+    <div id="webview-warning">
+        <h2>¡Casi listo! ✨</h2>
+        <p>Para ver tu sorpresa correctamente y que la magia funcione, por favor abre esto en tu navegador.</p>
+        <p><strong>Toca los 3 puntitos (o el botón de compartir) arriba a la derecha y elige "Abrir en el navegador", "Safari" o "Chrome".</strong></p>
+    </div>
+
+    <!-- Pantalla interactiva inicial -->
+    <div id="start-screen">
+        <h2>Tengo algo para ti...</h2>
+        <button id="start-btn">Abrir Regalo ❤️</button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="ui-layer" class="ui-layer">
+        
+        <div class="glass-panel poem-panel">
+            <h1 class="poem-title">Mi amor eterno...</h1>
+            <div id="poem-lines" class="poem-text">
+                <p class="poem-line">Nuestra historia comenzó un mágico <strong>28 de febrero de 2024</strong>, el día en que mi mundo se llenó de tu luz.</p>
+                <p class="poem-line">Y aquel <strong>15 de mayo de 2024</strong>, cuando aceptaste ser mi novia, me convertiste en el hombre más feliz y afortunado del universo.</p>
+                <p class="poem-line">Eres mi refugio, mi paz, mi locura y mi razón. Este árbol florece de la misma forma en que crece mi amor por ti: sus hojas pueden caer, pero jamás se terminan, porque mi cariño se renueva en cada latido.</p>
+                <p class="poem-line" style="margin-bottom: 0;">Te amo sin medidas, y mi mayor sueño es pasar <strong>el resto de mi vida a tu lado</strong>.</p>
+            </div>
+        </div>
+
+        <div class="glass-panel timer-panel">
+            <div class="timer-subtitle">
+                El sol y las estrellas han sido testigos de nuestro amor por:
+            </div>
+            <div id="timer" class="timer-numbers">
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        // --- DETECTOR DE WHATSAPP / WEBVIEW ---
+        function isWebView() {
+            const ua = navigator.userAgent || navigator.vendor || window.opera;
+            return (
+                (ua.indexOf('WhatsApp') > -1) || 
+                (ua.indexOf('FBAN') > -1) || 
+                (ua.indexOf('FBAV') > -1) || 
+                (ua.indexOf('Instagram') > -1) || 
+                (ua.indexOf('wv') > -1) || 
+                (ua.match(/iPhone|iPod|iPad/) && ua.match(/AppleWebKit/) && !ua.match(/Safari/))
+            );
+        }
+
+        // Si estamos en WhatsApp, bloqueamos todo y mostramos las instrucciones
+        if (isWebView() && window.location.protocol !== 'file:') {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('webview-warning').style.display = 'flex';
+        } else {
+            // Flujo normal si ya estamos en Chrome o Safari
+            document.getElementById('start-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                const startScreen = document.getElementById('start-screen');
+                startScreen.style.opacity = '0';
+                setTimeout(() => {
+                    startScreen.style.display = 'none';
+                    checkAndInit(); 
+                }, 500);
+            });
+        }
+
+        // --- TIMER ---
+        const startDate = new Date(2024, 1, 28, 0, 0, 0);
+
+        function updateTimer() {
+            const now = new Date();
+            const diff = now - startDate;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const mins = Math.floor((diff / 1000 / 60) % 60);
+            const secs = Math.floor((diff / 1000) % 60);
+            const pad = (num) => num.toString().padStart(2, '0');
+
+            const timerEl = document.getElementById('timer');
+            if (timerEl) {
+                timerEl.innerHTML = `
+                    <div class="timer-block"><span class="timer-value">${days}</span><span class="timer-label">Días</span></div> <span class="timer-colon">:</span>
+                    <div class="timer-block"><span class="timer-value">${pad(hours)}</span><span class="timer-label">Hrs</span></div> <span class="timer-colon">:</span>
+                    <div class="timer-block"><span class="timer-value">${pad(mins)}</span><span class="timer-label">Min</span></div> <span class="timer-colon">:</span>
+                    <div class="timer-block"><span class="timer-value">${pad(secs)}</span><span class="timer-label">Seg</span></div>
+                `;
+            }
+        }
+        setInterval(updateTimer, 1000);
+        updateTimer();
+
+        // --- TREE & PARTICLES ---
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d'); 
+        let width, height;
+        
+        let branches = [];
+        let staticHearts = [];
+        let fallingHearts = [];
+        
+        // Colores de tu estilo preferido (Rojos/Magentas oscuros y elegantes)
+        const colors = ['#e63946', '#d90429', '#ef233c', '#ff0054', '#c1121f', '#780000', '#ff4d6d', '#ff758f', '#a4133c', '#800f2f'];
+        
+        let startTime = 0;
+        let isInitialized = false;
+        let uiRevealed = false;
+        let poemRevealed = false;
+
+        function drawHeart(context, x, y, size, color, rot = 0, alpha = 1) {
+            context.save();
+            context.translate(x, y);
+            context.rotate(rot);
+            context.scale(size, size);
+            context.globalAlpha = alpha;
+            context.fillStyle = color;
+            context.beginPath();
+            context.moveTo(0, 0);
+            context.bezierCurveTo(0, -3, -5, -3, -5, 0);
+            context.bezierCurveTo(-5, 3, 0, 5, 0, 8);
+            context.bezierCurveTo(0, 5, 5, 3, 5, 0);
+            context.bezierCurveTo(5, -3, 0, -3, 0, 0);
+            context.fill();
+            context.restore();
+        }
+
+        function createTreeStructure() {
+            branches = [];
+            staticHearts = [];
+            
+            // Garantizar valores numéricos seguros
+            const safeWidth = Math.max(width, 300);
+            const safeHeight = Math.max(height, 400);
+            const isMobile = safeWidth < 768;
+            
+            const cx = safeWidth / 2;
+            const R = isMobile ? Math.min(safeWidth, safeHeight) * 0.45 : safeHeight * 0.38; 
+            const cy = isMobile ? safeHeight * 0.40 : safeHeight * 0.45; 
+            const maxLevel = isMobile ? 9 : 11; 
+
+            const trunkStartX = cx;
+            const trunkStartY = safeHeight + 50;
+            const trunkEndX = cx;
+            const trunkEndY = cy + R * 0.8; 
+            
+            branches.push({ x1: trunkStartX, y1: trunkStartY, x2: trunkEndX, y2: trunkEndY, w: maxLevel * (isMobile ? 1.8 : 2.5), level: 0, maxLvl: maxLevel });
+
+            function buildBranch(x, y, len, angle, level) {
+                if (level > maxLevel) return;
+                
+                const endX = x + len * Math.cos(angle);
+                const endY = y + len * Math.sin(angle);
+                
+                // Límites matemáticos para respetar el corazón
+                const nx = (endX - cx) / R;
+                const ny = -(endY - cy) / R;
+                const eq = Math.pow(nx*nx + ny*ny - 1, 3) - (nx*nx * ny*ny*ny);
+                if (eq > 0.8 && level > 4) return; 
+
+                const w = (maxLevel - level + 1) * (isMobile ? 0.6 : 0.9); 
+                branches.push({ x1: x, y1: y, x2: endX, y2: endY, w: w, level: level, maxLvl: maxLevel });
+
+                const spread = 0.25 + (Math.random() * 0.25); 
+                const shrink = 0.75 + (Math.random() * 0.1);  
+                
+                buildBranch(endX, endY, len * shrink, angle - spread, level + 1);
+                buildBranch(endX, endY, len * shrink, angle + spread, level + 1);
+                
+                if (Math.random() > 0.35) {
+                    buildBranch(endX, endY, len * 0.65, angle + (Math.random() - 0.5) * 0.2, level + 1);
+                }
+            }
+            
+            buildBranch(trunkEndX, trunkEndY, R * 0.35, -Math.PI / 2, 1);
+
+            let attempts = 0;
+            const maxLeaves = isMobile ? 600 : 1200; 
+            const maxAttempts = 10000; 
+
+            while(staticHearts.length < maxLeaves && attempts < maxAttempts) {
+                attempts++;
+                const u = (Math.random() * 3) - 1.5; 
+                const v = (Math.random() * 3) - 1.5;
+                
+                const u2 = u*u;
+                const v2 = v*v;
+                const eq = Math.pow(u2 + v2 - 1, 3) - (u2 * v2 * v);
+                
+                if (eq <= 0) {
+                    const px = cx + u * R;
+                    const py = cy - v * R; 
+                    
+                    const dx = px - trunkEndX;
+                    const dy = py - trunkEndY;
+                    const distFromTip = Math.sqrt(dx*dx + dy*dy);
+                    const growDelay = (distFromTip / (2.5 * R)) * 2000;
+                    
+                    staticHearts.push({
+                        x: px,
+                        y: py,
+                        size: Math.random() * 1.6 + 0.6,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        delay: growDelay + Math.random() * 800 
+                    });
+                }
+            }
+        }
+
+        function checkAndInit() {
+            if (isInitialized) return;
+
+            // Obtener el ancho y alto del dispositivo de la forma más estable posible
+            let w = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth || 0;
+            let h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight || 0;
+
+            // Valores de rescate obligatorios por si falla
+            width = Math.max(parseInt(w), 300);
+            height = Math.max(parseInt(h), 400);
+
+            canvas.width = width;
+            canvas.height = height;
+
+            isInitialized = true;
+
+            createTreeStructure();
+            fallingHearts = [];
+            startTime = Date.now();
+            
+            requestAnimationFrame(loop);
+        }
+
+        function loop() {
+            try {
+                const elapsed = Date.now() - startTime;
+                
+                ctx.clearRect(0, 0, width, height);
+
+                const treeProgress = Math.min(1, elapsed / 3000);
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#2b1704'; // Madera oscura tipo fractal
+                
+                branches.forEach(b => {
+                     const branchStartOffset = (b.level / b.maxLvl) * 0.5; 
+                     let p = (treeProgress - branchStartOffset) * 2;
+                     p = Math.max(0, Math.min(1, p));
+                     
+                     if (p > 0) {
+                         const curX = b.x1 + (b.x2 - b.x1) * p;
+                         const curY = b.y1 + (b.y2 - b.y1) * p;
+                         ctx.lineWidth = b.w;
+                         ctx.beginPath();
+                         ctx.moveTo(b.x1, b.y1);
+                         ctx.lineTo(curX, curY);
+                         ctx.stroke();
+                     }
+                });
+
+                if (elapsed > 2000) {
+                    staticHearts.forEach(h => {
+                        const bloomElapsed = elapsed - 2000 - h.delay;
+                        if (bloomElapsed > 0) {
+                             let scale = Math.min(1, bloomElapsed / 1000); 
+                             const pulse = 1 + 0.05 * Math.sin(Date.now() / 200 + h.x);
+                             drawHeart(ctx, h.x, h.y, h.size * scale * pulse, h.color);
+
+                             if (scale === 1 && Math.random() < 0.002) {
+                                 fallingHearts.push({
+                                     x: h.x, y: h.y, 
+                                     size: h.size, 
+                                     color: h.color,
+                                     vx: (Math.random() - 0.5) * 2,
+                                     vy: Math.random() * 2 + 1,
+                                     rot: Math.random() * Math.PI,
+                                     rotSpeed: (Math.random() - 0.5) * 0.1,
+                                     alpha: 1
+                                 });
+                                 h.delay = Math.random() * 1000;
+                             }
+                        }
+                    });
+                }
+
+                for (let i = fallingHearts.length - 1; i >= 0; i--) {
+                    let f = fallingHearts[i];
+                    f.x += f.vx + Math.sin(Date.now()/500 + f.size)*1; 
+                    f.y += f.vy;
+                    f.rot += f.rotSpeed;
+                    
+                    if (f.y > height - 100) f.alpha -= 0.02;
+                    
+                    if (f.alpha > 0) {
+                        drawHeart(ctx, f.x, f.y, f.size, f.color, f.rot, f.alpha);
+                    } else {
+                        fallingHearts.splice(i, 1);
+                    }
+                }
+
+                if (elapsed > 3500 && !uiRevealed) {
+                    uiRevealed = true;
+                    const uiLayer = document.getElementById('ui-layer');
+                    if (uiLayer) {
+                        uiLayer.classList.add('visible');
+                    }
+                }
+
+                if (elapsed > 4500 && !poemRevealed) {
+                    poemRevealed = true;
+                    const lines = document.querySelectorAll('.poem-line');
+                    lines.forEach((line, index) => {
+                        setTimeout(() => {
+                            line.classList.add('visible');
+                        }, index * 2000);
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+    </script>
+</body>
+</html>
